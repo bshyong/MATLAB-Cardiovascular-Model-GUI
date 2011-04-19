@@ -80,9 +80,10 @@ function solve_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % model initialization
+clc;
 parameter_struct
 [yinit]=get_clinical_initial;
-opts=odeset('Stats', 'on');
+opts=odeset('Stats', 'on', 'OutputFcn',@odeprog,'Events',@odeabort);
 % run model 
 [Tout, Yout]=ode23s(@clin_model_2, [0 20], yinit, opts);
 
@@ -102,10 +103,26 @@ for i=1:length(Yout)
 end
 plot(Tout(1000:end), Ppma(1000:end), Tout(1000:end), Yout(1000:end,16), Tout(1000:end), Yout(1000:end,17));legend('Ppma','Pra','Prv');
 
+%  calculations for clinical values
+% mean aortic pressure
+ T=60/70;
+ A=find(Tout>(20*T)&Tout<(21*T));
+ Tsmall=(Tout(A)-Tout(A(1)));
+Aortic_pressure = Yout(:,6);
+MAP = mean(Aortic_pressure(A));
+
+right_atrial_pressure = Yout(:,16);
+MRAP = mean(right_atrial_pressure(A));
+left_atrial_pressure = Yout(:,14);
+MLAP = mean(left_atrial_pressure(A));
+
+
+
 % fill in data table with values
 global data_table;
 data_table = handles.uitable1;
-set(data_table, 'Data', magic(8));
+a = [MAP, MRAP, MLAP];
+set(data_table, 'Data', a);
 
 %initialize for chamber plots
          Iatrialres_L=(Yout(:,21)-Yout(:,14))/Ratrialres_L;
@@ -152,9 +169,9 @@ set(data_table, 'Data', magic(8));
          end
 
          %Add initial volumes
-         Volume_LA=Volume_LA+40;
+         Volume_LA=Volume_LA+140;
          Volume_LV=Volume_LV+120;
-         Volume_RA=Volume_RA;
+         Volume_RA=Volume_RA+100;
          Volume_RV=Volume_RV;
 
          Pressure_LA=Yout(A,14);
@@ -191,11 +208,12 @@ function Rpv_R_edit_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of Rpv_R_edit as text
 %        str2double(get(hObject,'String')) returns contents of Rpv_R_edit as a double
 global Rpv_R;
+Rpv_R = str2double(get(hObject,'String')) 
 % return user string input as a double
 if (isempty(Rpv_R))
-    set(hObject, 'String', '0.08')
+    set(hObject, 'String', '1000')
+    Rpv_R = str2double(get(hObject,'String'))     
 end
-Rpv_R = str2double(get(hObject,'String')) 
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -220,11 +238,13 @@ function Rpulart_edit_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of Rpulart_edit as text
 %        str2double(get(hObject,'String')) returns contents of Rpulart_edit as a double
 global Rpulart_L;
+Rpulart_L = str2double(get(hObject,'String')) ;
 % return user string input as a double
 if (isempty(Rpulart_L))
-    set(hObject, 'String', '1000')
+     set(hObject, 'String', '0.08')
+     Rpulart_L = str2double(get(hObject,'String')) ;   
 end
-Rpulart_L = str2double(get(hObject,'String')) ;
+
 guidata(hObject, handles);
 
 
